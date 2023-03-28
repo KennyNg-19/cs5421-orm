@@ -1,15 +1,31 @@
-from sqlalchemy.ext.declarative import declarative_base
+from sqlalchemy.orm import declarative_base
 from sqlalchemy import Column, Integer, String, inspect, MetaData, Table, func
 from sqlalchemy.engine import create_engine
 from sqlalchemy.orm import sessionmaker, aliased
 from sqlalchemy.ext.automap import automap_base
 from sqlalchemy.sql import case
 
+# 创建对象的基类:
 BaseModel = declarative_base()
 database = 'northwind2'
-engine = create_engine(f"mysql+pymysql://root:3.926puanY@localhost:3306/{database}?charset=utf8")  # 数据库链接驱动语句
-select_db = sessionmaker(engine)  # 选中数据库
-session = select_db()  # 已经打开查询窗口
+user = 'root'
+psw = '12345678'
+# engine = create_engine(f"mysql+pymysql://{user}:{psw}@localhost:3306/{database}?charset=utf8", echo=True)  # 数据库链接驱动语句
+# echo=True是开启调试，这样当我们执行文件的时候会提示相应的文字。
+# 数据库连接驱动
+engine = create_engine(f"mysql+pymysql://{user}:{psw}@localhost:3306/{database}?charset=utf8")  
+
+
+# session用于创建程序和数据库之间的会话，所有对象的载入和保存都需要通过session对象 。
+# 通过sessionmaker调用创建一个工厂，并关联Engine以确保每个session都可以使用该Engine连接资源：
+DbSession = sessionmaker(bind=engine)  # 创建DBSession类: 连接池，连接选中数据库
+session = DbSession()  # 打开查询窗口
+# session的常见操作方法包括：
+# flush：预提交，提交到数据库文件，还未写入数据库文件中
+# commit：提交了一个事务
+# rollback：回滚
+# close：关闭
+
 
 # 反向映射原生表到 Table类
 Base = automap_base()
@@ -32,6 +48,9 @@ def create_tables():
     # 利用 User 去数据库建立 user Table
     BaseModel.metadata.create_all(engine)  # 数据库引擎
 
+def check_func():
+    create_tables()
+    
 def sql_deemo():
     # 2.选择表
     # 3.建立查询窗口
@@ -44,6 +63,14 @@ def sql_deemo():
     # db_session.commit()
     # 6.关闭查询窗口
     session.close()
+
+def show_tables():
+    insp = inspect(engine)
+    out = insp.get_table_names(schema='northwind2')
+    print(out)
+
+
+# ---------------------------------------------------------------------
 
 def sql11():
     subquery = session.query(Products).with_entities(func.avg(Products.UnitPrice)).subquery()
@@ -307,13 +334,6 @@ def sql16():
     for data in stmt:
         print([col for col in data])
 
-def show_tables():
-    insp = inspect(engine)
-    out = insp.get_table_names(schema='northwind2')
-    print(out)
-
-def check_func():
-    create_tables()
 
 if __name__ == "__main__":
     show_tables()
