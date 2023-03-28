@@ -1,5 +1,5 @@
 from sqlalchemy.orm import declarative_base
-from sqlalchemy import Column, Integer, String, inspect, MetaData, Table, func
+from sqlalchemy import Column, Integer, String, inspect, MetaData, Table, func, distinct
 from sqlalchemy.engine import create_engine
 from sqlalchemy.orm import sessionmaker, aliased
 from sqlalchemy.ext.automap import automap_base
@@ -73,6 +73,18 @@ def show_tables():
 # ---------------------------------------------------------------------
 
 def sql11():
+    '''
+    SELECT DISTINCT
+        ProductName, UnitPrice
+    FROM
+        Products
+    WHERE
+        UnitPrice > (SELECT 
+                AVG(UnitPrice)
+            FROM
+                Products)
+    ORDER BY UnitPrice;
+    '''
     subquery = session.query(Products).with_entities(func.avg(Products.UnitPrice)).subquery()
     query = session.query(Products.ProductName, Products.UnitPrice) \
         .filter(Products.UnitPrice > subquery) \
