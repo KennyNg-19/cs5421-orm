@@ -247,8 +247,6 @@ def sql15():
     inner join Products f on f.ProductID = e.ProductID
     order by b.ShipName;
     '''
-    # 别名
-    Order_Details_alias = aliased(Order_Details)
 
     query = session.query(
         Orders.ShipName,
@@ -275,17 +273,17 @@ def sql15():
         Order_Details.UnitPrice,
         Order_Details.Quantity,
         Order_Details.Discount,
-        func.round(Order_Details.UnitPrice * Order_Details.Quantity * (1 - Order_Details.Discount), 2).label(
+        Order_Details.UnitPrice * Order_Details.Quantity * (1 - Order_Details.Discount).label(
             'ExtendedPrice'),
         Orders.Freight
     ). \
         join(Shippers, Shippers.ShipperID == Orders.ShipVia). \
         join(Customers, Customers.CustomerID == Orders.CustomerID). \
         join(Employees, Employees.EmployeeID == Orders.EmployeeID). \
-        join(Order_Details_alias, Orders.OrderID == Order_Details_alias.OrderID). \
-        join(Products, Products.ProductID == Order_Details_alias.ProductID). \
-        distinct(Order_Details.ProductID). \
+        join(Order_Details, Orders.OrderID == Order_Details.OrderID). \
+        join(Products, Products.ProductID == Order_Details.ProductID). \
         order_by(Orders.ShipName)
+
     for data in query:
         print([col for col in data])
 
