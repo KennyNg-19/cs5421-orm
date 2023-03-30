@@ -71,6 +71,109 @@ def show_tables():
 
 
 # ---------------------------------------------------------------------
+def sql1():
+    '''
+    select OrderID, 
+        format(sum(UnitPrice * Quantity * (1 - Discount)), 2) as Subtotal
+    from order_details
+    group by OrderID
+    order by OrderID;
+    '''
+    # order_details = Order_Details
+    subtotal = func.format(func.sum(Order_Details.UnitPrice * Order_Details.Quantity * (1 - Order_Details.Discount)), 2).label('Subtotal')
+    query = session.query(Order_Details.OrderID, subtotal).group_by(Order_Details.OrderID).order_by(Order_Details.OrderID)
+    
+    # query = session.query([order_details.OrderID, subtotal]).group_by(order_details.OrderID).order_by(order_details.OrderID)
+
+    # for row in query:
+    #     print(row)
+    return query
+
+
+def sql2():
+    '''
+    SELECT DISTINCT
+        DATE(a.ShippedDate) AS ShippedDate,
+        a.OrderID,
+        b.Subtotal,
+        YEAR(a.ShippedDate) AS Year
+    FROM
+        Orders a
+            INNER JOIN
+        (SELECT DISTINCT
+            OrderID,
+                FORMAT(SUM(UnitPrice * Quantity * (1 - Discount)), 2) AS Subtotal
+        FROM
+            Order_Details
+        GROUP BY OrderID) b ON a.OrderID = b.OrderID
+    WHERE
+        a.ShippedDate IS NOT NULL
+            AND a.ShippedDate BETWEEN DATE('1996-12-24') AND DATE('1997-09-30')
+    ORDER BY a.ShippedDate;
+    '''
+    # 查询语句
+    subtotal = func.sum(Order_Details.UnitPrice * Order_Details.Quantity * (1 - Order_Details.Discount)).label('Subtotal')
+    sub_query = session.query(Order_Details.OrderID, subtotal).group_by(Order_Details.OrderID).subquery()
+
+    query = session.query(func.distinct(func.date(Orders.ShippedDate)).label('ShippedDate'),
+                        Orders.OrderID,
+                        sub_query.c.Subtotal,
+                        func.year(Orders.ShippedDate).label('Year'))\
+                            .join(sub_query, Orders.OrderID == sub_query.c.OrderID)\
+                            .filter(Orders.ShippedDate.isnot(None), Orders.ShippedDate.between('1996-12-24', '1997-09-30'))\
+                            .order_by("ShippedDate") # 光执行SQL本身 不ORM：在select之后了，所以必须 by alias ONLY, not by Orders.ShippedDate
+                            # .order_by(Orders.ShippedDate)
+
+    # results = query.all()
+    for row in query:
+        print(row)
+
+def sql3():
+    pass
+
+def sql4():
+    '''
+    SELECT DISTINCT
+        b.*, a.CategoryName
+    FROM
+        Categories a
+            INNER JOIN
+        Products b ON a.CategoryID = b.CategoryID
+    WHERE
+        b.Discontinued = 'N'
+    ORDER BY b.ProductName;
+    '''
+    query = session.query(Products.__table__.c, Categories.CategoryName).join(Categories, Categories.CategoryID == Products.CategoryID).\
+        filter(Products.Discontinued == 'N').order_by(Products.ProductName).distinct(Products.__table__.c)
+
+    # results = query.all()
+    # for row in query:
+    #     print(row)
+    return query
+
+
+
+def sql5():
+    """
+    SELECT 
+        ProductID, ProductName
+    FROM
+        products
+    WHERE
+        Discontinued = 'N'
+    ORDER BY ProductName;
+    """
+    query = session.query(Products.ProductID, Products.ProductName).\
+                            filter(Products.Discontinued=='N').\
+                                order_by(Products.ProductName)
+    # for row in query:
+    #     print(row)
+    return query
+
+
+# ---------------------------------------------------------------------
+
+# ---------------------------------------------------------------------
 
 def sql11():
     '''
