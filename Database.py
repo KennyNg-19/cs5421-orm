@@ -1,9 +1,10 @@
 from sqlalchemy.orm import declarative_base
-from sqlalchemy import Column, Integer, String, inspect, MetaData, Table, func, distinct, desc
+from sqlalchemy import Column, Integer, String, inspect, MetaData, Table, func, distinct, desc, literal
 from sqlalchemy.engine import create_engine
 from sqlalchemy.orm import sessionmaker, aliased
 from sqlalchemy.ext.automap import automap_base
 from sqlalchemy.sql import case
+from memory_profiler import profile
 
 # 创建对象的基类:
 BaseModel = declarative_base()
@@ -71,6 +72,8 @@ def show_tables():
 
 
 # ---------------------------------------------------------------------
+
+# @profile(precision=4,stream=open('memory_profiler.log','w+'))
 def sql1():
     '''
     select OrderID, 
@@ -87,9 +90,9 @@ def sql1():
 
     # for row in query:
     #     print(row)
-    return query.all()
+    return query
 
-
+# @profile()
 def sql2():
     '''
     SELECT DISTINCT
@@ -115,19 +118,20 @@ def sql2():
     subtotal = func.sum(Order_Details.UnitPrice * Order_Details.Quantity * (1 - Order_Details.Discount)).label('Subtotal')
     sub_query = session.query(Order_Details.OrderID, subtotal).group_by(Order_Details.OrderID).subquery()
 
-    query = session.query(func.distinct(func.date(Orders.ShippedDate)).label('ShippedDate'),
-                        Orders.OrderID,
-                        sub_query.c.Subtotal,
-                        func.year(Orders.ShippedDate).label('Year'))\
-                            .join(sub_query, Orders.OrderID == sub_query.c.OrderID)\
-                            .filter(Orders.ShippedDate.isnot(None), Orders.ShippedDate.between('1996-12-24', '1997-09-30'))\
-                            .order_by("ShippedDate") # 光执行SQL本身 不ORM：在select之后了，所以必须 by alias ONLY, not by Orders.ShippedDate
+    query = (session.query(func.distinct(func.date(Orders.ShippedDate)).label('ShippedDate'),
+                           Orders.OrderID,
+                           sub_query.c.Subtotal,
+                           func.year(Orders.ShippedDate).label('Year'))
+             .join(sub_query, Orders.OrderID == sub_query.c.OrderID)
+             .filter(Orders.ShippedDate.isnot(None), Orders.ShippedDate.between('1996-12-24', '1997-09-30'))
+             .order_by("ShippedDate") # 光执行SQL本身 不ORM：在select之后了，所以必须 by alias ONLY, not by Orders.ShippedDate
                             # .order_by(Orders.ShippedDate)
+            )
 
     # results = query.all()
     # for row in query:
     #     print(row)
-    return query.all()
+    return query
 
 # def sql3():
 #     pass
@@ -144,13 +148,17 @@ def sql4():
         b.Discontinued = 'N'
     ORDER BY b.ProductName;
     '''
-    query = session.query(Products.__table__.c, Categories.CategoryName).join(Categories, Categories.CategoryID == Products.CategoryID).\
-        filter(Products.Discontinued == 'N').order_by(Products.ProductName).distinct(Products.__table__.c)
+    query = (session.query(Products.__table__.c, Categories.CategoryName)
+            .join(Categories, Categories.CategoryID == Products.CategoryID)
+            .filter(Products.Discontinued == 'N')
+            .order_by(Products.ProductName)
+            .distinct(Products.__table__.c)
+            )
 
     # results = query.all()
     # for row in query:
     #     print(row)
-    return query.all()
+    return query
 
 
 
@@ -164,15 +172,51 @@ def sql5():
         Discontinued = 'N'
     ORDER BY ProductName;
     """
-    query = session.query(Products.ProductID, Products.ProductName).\
-                            filter(Products.Discontinued=='N').\
-                                order_by(Products.ProductName)
+    query = (session.query(Products.ProductID, Products.ProductName).
+                            filter(Products.Discontinued=='N').
+                                order_by(Products.ProductName))
     # for row in query:
     #     print(row)
-    return query.all()
+    return query
 
 
 # ---------------------------------------------------------------------
+
+def sql6():
+    '''
+    SELECT DISTINCT
+        y.OrderID,
+        y.ProductID,
+        x.ProductName,
+        y.UnitPrice,
+        y.Quantity,
+        y.Discount,
+        ROUND(y.UnitPrice * y.Quantity * (1 - y.Discount),
+                2) AS ExtendedPrice
+    FROM
+        Products x
+            INNER JOIN
+        Order_Details y ON x.ProductID = y.ProductID
+    ORDER BY y.OrderID;
+    '''
+
+
+
+    OrderDetail = Order_Details
+
+    # build the query
+    query = (session.query(distinct(OrderDetail.OrderID),
+                    OrderDetail.ProductID,
+                    Products.ProductName,
+                    OrderDetail.UnitPrice,
+                    OrderDetail.Quantity,
+                    OrderDetail.Discount,
+                    func.round(OrderDetail.UnitPrice * OrderDetail.Quantity * (1 - OrderDetail.Discount), 2).label('ExtendedPrice'))
+            .join(OrderDetail, Products.ProductID == OrderDetail.ProductID)
+            .order_by(OrderDetail.OrderID))
+
+    return query
+
 def sql7():
     '''
     SELECT DISTINCT
@@ -196,20 +240,20 @@ def sql7():
     '''
 
     # 注意3个join是倒叙的
-    query = session.query(
+    query = (session.query(
         Categories.CategoryID,
         Categories.CategoryName,
         Products.ProductName,
-        func.sum(func.round(Order_Details.UnitPrice * Order_Details.Quantity * (1 - Order_Details.Discount), 2)).label("ProductSales")).\
-    join(Products, Categories.CategoryID == Products.CategoryID).\
-    join(Order_Details, Products.ProductID == Order_Details.ProductID).\
-    join(Orders, Orders.OrderID == Order_Details.OrderID).\
-    filter(Orders.OrderDate.between('1997/1/1', '1997/12/31')).\
-    group_by(Categories.CategoryID, Categories.CategoryName, Products.ProductName).\
-    order_by(Categories.CategoryName, Products.ProductName, "ProductSales")
+        func.sum(func.round(Order_Details.UnitPrice * Order_Details.Quantity * (1 - Order_Details.Discount), 2)).label("ProductSales")).
+        join(Products, Categories.CategoryID == Products.CategoryID).
+        join(Order_Details, Products.ProductID == Order_Details.ProductID).
+        join(Orders, Orders.OrderID == Order_Details.OrderID).
+        filter(Orders.OrderDate.between('1997/1/1', '1997/12/31')).
+        group_by(Categories.CategoryID, Categories.CategoryName, Products.ProductName).
+        order_by(Categories.CategoryName, Products.ProductName, "ProductSales"))
 
-    for row in query:
-        print(row)
+    # for row in query:
+    #     print(row)
     return query
 
 def sql8():
@@ -243,11 +287,72 @@ def sql8():
         .order_by(desc(Products.UnitPrice))
     )
 
+    return query
 
-    return query.all()
+def sql9():
+    '''
+    SELECT DISTINCT
+        a.CategoryName,
+        b.ProductName,
+        b.QuantityPerUnit,
+        b.UnitsInStock,
+        b.Discontinued
+    FROM
+        Categories a
+            INNER JOIN
+        Products b ON a.CategoryID = b.CategoryID
+    WHERE
+        b.Discontinued = 'N'
+    ORDER BY a.CategoryName , b.ProductName;
+    '''
+    query = (session.query(
+            Categories.CategoryName, 
+            Products.ProductName,
+            Products.QuantityPerUnit,
+            Products.UnitsInStock,
+            Products.Discontinued).join(Products, Categories.CategoryID==Products.CategoryID).
+                        filter(Products.Discontinued=='N').
+                        order_by(Categories.CategoryName, Products.ProductName))
+    # for row in query:
+    #     print(row)
+        
+    return query
 
 def sql10():
-    pass
+    '''
+    SELECT 
+        City, CompanyName, ContactName, 'Customers' AS Relationship
+    FROM
+        Customers 
+    UNION 
+    SELECT 
+        City, CompanyName, ContactName, 'Suppliers'
+    FROM
+        Suppliers
+    ORDER BY City , CompanyName;
+    '''
+    table1 = session.query(
+            Customers.City.label('City') , # new alias for union
+            Customers.CompanyName.label('CompanyName'), # new alias for union
+            Customers.ContactName,
+            literal("'Customers'").label("Relationship")
+        )
+    table2 = session.query(
+        Suppliers.City,
+        Suppliers.CompanyName,
+        Suppliers.ContactName,
+        literal("'Suppliers'").label("Suppliers")
+    )
+    
+    # union and sort - order by CANNOT access original columns! Either col's index or new alias
+    query = table1.union(table2).order_by(
+            'City', 'CompanyName'
+        )
+    
+    # for row in query:
+    #     print(row)
+    
+    return query
 # ---------------------------------------------------------------------
 
 def sql11():
@@ -268,8 +373,11 @@ def sql11():
         .filter(Products.UnitPrice > subquery) \
         .order_by(Products.UnitPrice) \
         .distinct()
-    for data in query:
-        print(data.ProductName, data.UnitPrice)
+    
+    # for data in query:
+    #     print(data.ProductName, data.UnitPrice)
+        
+    return query
 
 def sql12():
     # 定义子查询
@@ -524,9 +632,9 @@ def sql16():
 
 
 if __name__ == "__main__":
-    show_tables()
-    sql11()
-    sql12()
-    sql13()
+    # show_tables()
+    sql1()
+    sql10()
+    # sql13()
     # sql15() # 耗时太长
-    sql16()
+    # sql16()

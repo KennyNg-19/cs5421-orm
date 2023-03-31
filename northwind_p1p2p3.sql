@@ -146,6 +146,7 @@ WHERE
 ORDER BY a.CategoryName , b.ProductName;
 
 
+
 -- 10. Customers and Suppliers by City
 -- This query shows how to use UNION to merge Customers and Suppliers into one result set by identifying them as having different relationships to Northwind Traders - Customers and Suppliers.
 
@@ -160,9 +161,9 @@ FROM
 ORDER BY City , CompanyName;
 
 SELECT 
-	City, CompanyName, ContactName, 'Suppliers'
+    City, CompanyName, ContactName, 'Customers' AS Relationship
 FROM
-	Suppliers;
+    Customers;
 
 
 -- 11. Products Above Average Price
