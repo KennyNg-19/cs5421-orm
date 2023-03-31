@@ -1,5 +1,5 @@
 from sqlalchemy.orm import declarative_base
-from sqlalchemy import Column, Integer, String, inspect, MetaData, Table, func, distinct
+from sqlalchemy import Column, Integer, String, inspect, MetaData, Table, func, distinct, desc
 from sqlalchemy.engine import create_engine
 from sqlalchemy.orm import sessionmaker, aliased
 from sqlalchemy.ext.automap import automap_base
@@ -87,7 +87,7 @@ def sql1():
 
     # for row in query:
     #     print(row)
-    return query
+    return query.all()
 
 
 def sql2():
@@ -125,11 +125,12 @@ def sql2():
                             # .order_by(Orders.ShippedDate)
 
     # results = query.all()
-    for row in query:
-        print(row)
+    # for row in query:
+    #     print(row)
+    return query.all()
 
-def sql3():
-    pass
+# def sql3():
+#     pass
 
 def sql4():
     '''
@@ -149,7 +150,7 @@ def sql4():
     # results = query.all()
     # for row in query:
     #     print(row)
-    return query
+    return query.all()
 
 
 
@@ -168,11 +169,85 @@ def sql5():
                                 order_by(Products.ProductName)
     # for row in query:
     #     print(row)
-    return query
+    return query.all()
 
 
 # ---------------------------------------------------------------------
+def sql7():
+    '''
+    SELECT DISTINCT
+        a.CategoryID,
+        a.CategoryName,
+        b.ProductName,
+        SUM(ROUND(y.UnitPrice * y.Quantity * (1 - y.Discount),
+                2)) AS ProductSales
+    FROM
+        Order_Details y
+            INNER JOIN
+        Orders d ON d.OrderID = y.OrderID
+            INNER JOIN
+        Products b ON b.ProductID = y.ProductID
+            INNER JOIN
+        Categories a ON a.CategoryID = b.CategoryID
+    WHERE
+        d.OrderDate BETWEEN DATE('1997/1/1') AND DATE('1997/12/31')
+    GROUP BY a.CategoryID , a.CategoryName , b.ProductName
+    ORDER BY a.CategoryName , b.ProductName , ProductSales;
+    '''
 
+    # 注意3个join是倒叙的
+    query = session.query(
+        Categories.CategoryID,
+        Categories.CategoryName,
+        Products.ProductName,
+        func.sum(func.round(Order_Details.UnitPrice * Order_Details.Quantity * (1 - Order_Details.Discount), 2)).label("ProductSales")).\
+    join(Products, Categories.CategoryID == Products.CategoryID).\
+    join(Order_Details, Products.ProductID == Order_Details.ProductID).\
+    join(Orders, Orders.OrderID == Order_Details.OrderID).\
+    filter(Orders.OrderDate.between('1997/1/1', '1997/12/31')).\
+    group_by(Categories.CategoryID, Categories.CategoryName, Products.ProductName).\
+    order_by(Categories.CategoryName, Products.ProductName, "ProductSales")
+
+    for row in query:
+        print(row)
+    return query
+
+def sql8():
+    '''
+    SELECT DISTINCT
+        ProductName AS Ten_Most_Expensive_Products, 
+        UnitPrice
+    FROM
+        Products AS a
+    WHERE
+        10 >= (SELECT 
+                COUNT(DISTINCT UnitPrice)
+            FROM
+                Products AS b
+            WHERE
+                b.UnitPrice >= a.UnitPrice)
+    ORDER BY UnitPrice DESC;
+    '''
+
+    Products_aliased = aliased(Products)
+    subquery = session.query(
+            func.count(distinct(Products.UnitPrice))
+        ).filter(Products.UnitPrice >= Products_aliased.UnitPrice).as_scalar()
+    
+    query = (
+        session.query(
+            Products.ProductName.label('Ten_Most_Expensive_Products'),
+            Products.UnitPrice
+        )
+        .filter(10 >= subquery)
+        .order_by(desc(Products.UnitPrice))
+    )
+
+
+    return query.all()
+
+def sql10():
+    pass
 # ---------------------------------------------------------------------
 
 def sql11():

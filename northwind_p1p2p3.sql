@@ -159,6 +159,11 @@ FROM
     Suppliers
 ORDER BY City , CompanyName;
 
+SELECT 
+	City, CompanyName, ContactName, 'Suppliers'
+FROM
+	Suppliers;
+
 
 -- 11. Products Above Average Price
 -- This query shows how to use sub-query to get a single value (average unit price) that can be used in the outer-query.
