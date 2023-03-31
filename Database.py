@@ -428,9 +428,10 @@ def sql12():
             subquery.c.ShippedQuarter
         )
     )
-    result = query.all()
-    for data in result:
-        print(data.CategoryName, data.ProductName, data.ProductSales, data.ShippedQuarter)
+    # result = query.all()
+    # for data in result:
+    #     print(data.CategoryName, data.ProductName, data.ProductSales, data.ShippedQuarter)
+    return query
 
 def sql13():
     '''
@@ -493,9 +494,10 @@ def sql13():
     )
 
     # 执行查询
-    results = query.all()
-    for data in results:
-        print([col for col in data])
+    # results = query.all()
+    # for data in results:
+    #     print([col for col in data])
+    return query
 
 def sql15():
     '''
@@ -570,8 +572,9 @@ def sql15():
         join(Products, Products.ProductID == Order_Details.ProductID). \
         order_by(Orders.ShipName)
 
-    for data in query:
-        print([col for col in data])
+    # for data in query:
+    #     print([col for col in data])
+    return query
 
 def sql16():
     '''
@@ -627,8 +630,9 @@ def sql16():
         )
                   )
     )
-    for data in stmt:
-        print([col for col in data])
+    # for data in stmt:
+    #     print([col for col in data])
+    return stmt
 
 
 if __name__ == "__main__":
