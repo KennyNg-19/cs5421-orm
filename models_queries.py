@@ -158,26 +158,7 @@ def sql6():
 
 @profile(precision=4, stream=fp)
 def sql7():
-    '''
-    SELECT DISTINCT
-        a.CategoryID,
-        a.CategoryName,
-        b.ProductName,
-        SUM(ROUND(y.UnitPrice * y.Quantity * (1 - y.Discount),
-                2)) AS ProductSales
-    FROM
-        Order_Details y
-            INNER JOIN
-        Orders d ON d.OrderID = y.OrderID
-            INNER JOIN
-        Products b ON b.ProductID = y.ProductID
-            INNER JOIN
-        Categories a ON a.CategoryID = b.CategoryID
-    WHERE
-        d.OrderDate BETWEEN DATE('1997/1/1') AND DATE('1997/12/31')
-    GROUP BY a.CategoryID , a.CategoryName , b.ProductName
-    ORDER BY a.CategoryName , b.ProductName , ProductSales;
-    '''
+    
     session = DbSession()  # 打开查询窗口
     # 注意3个join是倒叙的
     query = (session.query(
@@ -467,7 +448,7 @@ if __name__ == "__main__":
     # show_tables()
     # sql1()
     # sql2()
-    sql15()
+    sql7()
     # sql13()
     # sql15()
     # sql16()
