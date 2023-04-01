@@ -4,10 +4,9 @@ from sqlalchemy.engine import create_engine
 from sqlalchemy.orm import sessionmaker, aliased
 from sqlalchemy.ext.automap import automap_base
 from sqlalchemy.sql import case
+
 from memory_profiler import profile
-import threading
-import datetime
-from concurrent.futures import ThreadPoolExecutor
+
 
 # 创建对象的基类:
 BaseModel = declarative_base()
@@ -76,7 +75,10 @@ def show_tables():
 
 # ---------------------------------------------------------------------
 
-# @profile(precision=4,stream=open('memory_profiler.log','w+'))
+# Stream Profiling Results to Log File 
+fp = open("sqlalch_memory.log", "w+")
+
+@profile(precision=4, stream=fp)
 def sql1():
     '''
     select OrderID, 
@@ -97,7 +99,7 @@ def sql1():
     session.close()
     return query
 
-# @profile()
+@profile(precision=4, stream=fp)
 def sql2():
     '''
     SELECT DISTINCT
@@ -142,7 +144,7 @@ def sql2():
 
 # def sql3():
 #     pass
-
+@profile(precision=4, stream=fp)
 def sql4():
     '''
     SELECT DISTINCT
@@ -667,9 +669,10 @@ def sql16():
 
 
 if __name__ == "__main__":
-    show_tables()
+    # show_tables()
     # sql1()
-    # sql10()
+    # sql2()
+    sql4()
     # sql13()
     # sql15()
     # sql16()
