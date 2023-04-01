@@ -5,6 +5,8 @@ from sqlalchemy.orm import sessionmaker, aliased
 from sqlalchemy.ext.automap import automap_base
 from sqlalchemy.sql import case
 from memory_profiler import profile
+import threading
+import datetime
 
 # 创建对象的基类:
 BaseModel = declarative_base()
@@ -634,11 +636,24 @@ def sql16():
     #     print([col for col in data])
     return stmt
 
+def multi_thread():
+    start = datetime.datetime.now()
+    print(f'start:{start}')
+    for i in range(100):
+        thread = threading.Thread(target=sql11)
+        thread.start()
+        thread.join()
+    print('threads end')
+    end = datetime.datetime.now()
+    print(f'end:{end}')
+    print(f'time cost:{end - start}')
+
 
 if __name__ == "__main__":
     # show_tables()
-    sql1()
-    sql10()
+    # sql1()
+    # sql10()
     # sql13()
     # sql15() # 耗时太长
     # sql16()
+    multi_thread()
