@@ -203,20 +203,16 @@ def sql6():
     ORDER BY y.OrderID;
     '''
 
-
-
-    OrderDetail = Order_Details
-
     # build the query
-    query = (session.query(distinct(OrderDetail.OrderID),
-                    OrderDetail.ProductID,
+    query = (session.query(distinct(Order_Details.OrderID),
+                    Order_Details.ProductID,
                     Products.ProductName,
-                    OrderDetail.UnitPrice,
-                    OrderDetail.Quantity,
-                    OrderDetail.Discount,
-                    func.round(OrderDetail.UnitPrice * OrderDetail.Quantity * (1 - OrderDetail.Discount), 2).label('ExtendedPrice'))
-            .join(OrderDetail, Products.ProductID == OrderDetail.ProductID)
-            .order_by(OrderDetail.OrderID))
+                    Order_Details.UnitPrice,
+                    Order_Details.Quantity,
+                    Order_Details.Discount,
+                    func.round(Order_Details.UnitPrice * Order_Details.Quantity * (1 - Order_Details.Discount), 2).label('ExtendedPrice'))
+            .join(Order_Details, Products.ProductID == Order_Details.ProductID)
+            .order_by(Order_Details.OrderID))
 
     return query
 
@@ -629,8 +625,7 @@ def sql16():
                 (s1.Country.in_(
                     ["UK", "Spain", "Sweden", "Germany", "Norway", "Denmark", "Netherlands", "Finland", "Italy",
                      "France"]), "Europe"),
-                (s1.Country.in_(["USA", "Canada", "Brazil"]), "America")
-            ,
+                (s1.Country.in_(["USA", "Canada", "Brazil"]), "America"),
             else_="Asia-Pacific",
         )
                   )
@@ -639,31 +634,7 @@ def sql16():
     #     print([col for col in data])
     return stmt
 
-def multi_thread(number):
-    start = datetime.datetime.now()
-    print(f'start:{start}')
-    for i in range(number):
-        thread = threading.Thread(target=sql12)
-        thread.start()
-        thread.join()
-    print('threads end')
-    end = datetime.datetime.now()
-    print(f'end:{end}')
-    print(f'time cost:{end - start}')
 
-def concurrent_queries(num_queries):
-    start = datetime.datetime.now()
-    print(f'start:{start}')
-    num_thread = 4
-    # with ThreadPoolExecutor(max_workers=num_thread) as executor:
-    with ThreadPoolExecutor(num_thread) as executor:
-        futures = [executor.submit(sql12) for i in range(num_queries)]
-        # results = [future.result for future in futures]
-    # print('result')
-    # print(results)
-    end = datetime.datetime.now()
-    print(f'end:{end}')
-    print(f'time cost:{end - start}')
 
 if __name__ == "__main__":
     # show_tables()
@@ -672,5 +643,4 @@ if __name__ == "__main__":
     # sql13()
     # sql15()
     # sql16()
-    multi_thread(100)
-    concurrent_queries(100)
+
