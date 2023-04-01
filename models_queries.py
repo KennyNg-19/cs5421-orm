@@ -86,6 +86,7 @@ def sql1():
     order by OrderID;
     '''
     # order_details = Order_Details
+    session = DbSession()  # 打开查询窗口
     subtotal = func.format(func.sum(Order_Details.UnitPrice * Order_Details.Quantity * (1 - Order_Details.Discount)), 2).label('Subtotal')
     query = session.query(Order_Details.OrderID, subtotal).group_by(Order_Details.OrderID).order_by(Order_Details.OrderID)
     
@@ -93,6 +94,7 @@ def sql1():
 
     # for row in query:
     #     print(row)
+    session.close()
     return query
 
 # @profile()
@@ -117,6 +119,7 @@ def sql2():
             AND a.ShippedDate BETWEEN DATE('1996-12-24') AND DATE('1997-09-30')
     ORDER BY a.ShippedDate;
     '''
+    session = DbSession()  # 打开查询窗口
     # 查询语句
     subtotal = func.sum(Order_Details.UnitPrice * Order_Details.Quantity * (1 - Order_Details.Discount)).label('Subtotal')
     sub_query = session.query(Order_Details.OrderID, subtotal).group_by(Order_Details.OrderID).subquery()
@@ -134,6 +137,7 @@ def sql2():
     # results = query.all()
     # for row in query:
     #     print(row)
+    session.close()
     return query
 
 # def sql3():
@@ -151,6 +155,8 @@ def sql4():
         b.Discontinued = 'N'
     ORDER BY b.ProductName;
     '''
+    session = DbSession()  # 打开查询窗口
+
     query = (session.query(Products.__table__.c, Categories.CategoryName)
             .join(Categories, Categories.CategoryID == Products.CategoryID)
             .filter(Products.Discontinued == 'N')
@@ -161,6 +167,8 @@ def sql4():
     # results = query.all()
     # for row in query:
     #     print(row)
+
+    session.close()
     return query
 
 
@@ -175,11 +183,16 @@ def sql5():
         Discontinued = 'N'
     ORDER BY ProductName;
     """
+
+    session = DbSession()  # 打开查询窗口
     query = (session.query(Products.ProductID, Products.ProductName).
                             filter(Products.Discontinued=='N').
                                 order_by(Products.ProductName))
     # for row in query:
     #     print(row)
+
+    session.close()
+
     return query
 
 
@@ -202,7 +215,7 @@ def sql6():
         Order_Details y ON x.ProductID = y.ProductID
     ORDER BY y.OrderID;
     '''
-
+    session = DbSession()  # 打开查询窗口
     # build the query
     query = (session.query(distinct(Order_Details.OrderID),
                     Order_Details.ProductID,
@@ -213,7 +226,7 @@ def sql6():
                     func.round(Order_Details.UnitPrice * Order_Details.Quantity * (1 - Order_Details.Discount), 2).label('ExtendedPrice'))
             .join(Order_Details, Products.ProductID == Order_Details.ProductID)
             .order_by(Order_Details.OrderID))
-
+    session.close()
     return query
 
 def sql7():
@@ -237,7 +250,7 @@ def sql7():
     GROUP BY a.CategoryID , a.CategoryName , b.ProductName
     ORDER BY a.CategoryName , b.ProductName , ProductSales;
     '''
-
+    session = DbSession()  # 打开查询窗口
     # 注意3个join是倒叙的
     query = (session.query(
         Categories.CategoryID,
@@ -253,6 +266,7 @@ def sql7():
 
     # for row in query:
     #     print(row)
+    session.close()
     return query
 
 def sql8():
@@ -272,6 +286,8 @@ def sql8():
     ORDER BY UnitPrice DESC;
     '''
 
+    session = DbSession()  # 打开查询窗口
+
     Products_aliased = aliased(Products)
     subquery = session.query(
             func.count(distinct(Products.UnitPrice))
@@ -286,6 +302,7 @@ def sql8():
         .order_by(desc(Products.UnitPrice))
     )
 
+    session.close()
     return query
 
 def sql9():
@@ -304,6 +321,8 @@ def sql9():
         b.Discontinued = 'N'
     ORDER BY a.CategoryName , b.ProductName;
     '''
+    session = DbSession()  # 打开查询窗口
+
     query = (session.query(
             Categories.CategoryName, 
             Products.ProductName,
@@ -314,7 +333,7 @@ def sql9():
                         order_by(Categories.CategoryName, Products.ProductName))
     # for row in query:
     #     print(row)
-        
+    session.close()
     return query
 
 def sql10():
@@ -330,6 +349,8 @@ def sql10():
         Suppliers
     ORDER BY City , CompanyName;
     '''
+    session = DbSession()  # 打开查询窗口
+
     table1 = session.query(
             Customers.City.label('City') , # new alias for union
             Customers.CompanyName.label('CompanyName'), # new alias for union
@@ -350,7 +371,7 @@ def sql10():
     
     # for row in query:
     #     print(row)
-    
+    session.close()
     return query
 # ---------------------------------------------------------------------
 
@@ -367,6 +388,8 @@ def sql11():
                 Products)
     ORDER BY UnitPrice;
     '''
+    session = DbSession()  # 打开查询窗口
+
     subquery = session.query(Products).with_entities(func.avg(Products.UnitPrice)).subquery()
     query = session.query(Products.ProductName, Products.UnitPrice) \
         .filter(Products.UnitPrice > subquery) \
@@ -375,7 +398,7 @@ def sql11():
     
     # for data in query:
     #     print(data.ProductName, data.UnitPrice)
-        
+    session.close()
     return query
 
 def sql12():
@@ -459,6 +482,7 @@ def sql13():
     order by CategoryName;
     '''
 
+    session = DbSession()  # 打开查询窗口
     # 声明表的别名
     Category = aliased(Categories)
     Product = aliased(Products)
@@ -498,6 +522,7 @@ def sql13():
     # results = query.all()
     # for data in results:
     #     print([col for col in data])
+    session.close()
     return query
 
 def sql15():
@@ -537,6 +562,7 @@ def sql15():
     order by b.ShipName;
     '''
 
+    session = DbSession()  # 打开查询窗口
     query = session.query(
         Orders.ShipName,
         Orders.ShipAddress,
@@ -575,6 +601,7 @@ def sql15():
 
     # for data in query:
     #     print([col for col in data])
+    session.close()
     return query
 
 def sql16():
@@ -602,6 +629,8 @@ def sql16():
                   else 'Asia-Pacific'
              end;
     '''
+    session = DbSession()  # 打开查询窗口
+
     s1 = aliased(Suppliers)
     c1 = aliased(Categories)
 
@@ -632,12 +661,13 @@ def sql16():
     )
     # for data in stmt:
     #     print([col for col in data])
+    session.close()
     return stmt
 
 
 
 if __name__ == "__main__":
-    # show_tables()
+    show_tables()
     # sql1()
     # sql10()
     # sql13()
