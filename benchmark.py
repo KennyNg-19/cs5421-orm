@@ -44,7 +44,7 @@ def metric_time():
     for i,check in enumerate(func_list):
         print(f'begin func {check["name"]}')
         time_cost = concurrent_queries(num_queries,check['func'],num_thread)
-        result = {'func':check['name'],'time_cost':time_cost}
+        result = {'func':check['name'],'num_queries':num_queries,'num_thread':num_thread,'time_cost':time_cost}
         metric_result.append(result)
     print(metric_result)
 
