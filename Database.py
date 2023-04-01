@@ -654,6 +654,6 @@ if __name__ == "__main__":
     # sql1()
     # sql10()
     # sql13()
-    # sql15() # 耗时太长
+    # sql15()
     # sql16()
     multi_thread()
