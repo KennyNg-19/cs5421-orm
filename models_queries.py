@@ -53,19 +53,6 @@ def create_tables():
 
 def check_func():
     create_tables()
-    
-def sql_deemo():
-    # 2.选择表
-    # 3.建立查询窗口
-    # 4.写入SQL语句
-    Categories = Base.classes.categories
-    res = session.query(Categories).filter(Categories.CategoryID == 1).all()
-    for data in res:
-        print(data.CategoryName)
-    # 5.提交sql语句
-    # db_session.commit()
-    # 6.关闭查询窗口
-    session.close()
 
 def show_tables():
     insp = inspect(engine)
@@ -80,20 +67,11 @@ fp = open("sqlalch_memory.log", "w+")
 
 @profile(precision=4, stream=fp)
 def sql1():
-    '''
-    select OrderID, 
-        format(sum(UnitPrice * Quantity * (1 - Discount)), 2) as Subtotal
-    from order_details
-    group by OrderID
-    order by OrderID;
-    '''
-    # order_details = Order_Details
+
     session = DbSession()  # 打开查询窗口
     subtotal = func.format(func.sum(Order_Details.UnitPrice * Order_Details.Quantity * (1 - Order_Details.Discount)), 2).label('Subtotal')
     query = session.query(Order_Details.OrderID, subtotal).group_by(Order_Details.OrderID).order_by(Order_Details.OrderID)
     
-    # query = session.query([order_details.OrderID, subtotal]).group_by(order_details.OrderID).order_by(order_details.OrderID)
-
     # for row in query:
     #     print(row)
     session.close()
@@ -101,26 +79,7 @@ def sql1():
 
 @profile(precision=4, stream=fp)
 def sql2():
-    '''
-    SELECT DISTINCT
-        DATE(a.ShippedDate) AS ShippedDate,
-        a.OrderID,
-        b.Subtotal,
-        YEAR(a.ShippedDate) AS Year
-    FROM
-        Orders a
-            INNER JOIN
-        (SELECT DISTINCT
-            OrderID,
-                FORMAT(SUM(UnitPrice * Quantity * (1 - Discount)), 2) AS Subtotal
-        FROM
-            Order_Details
-        GROUP BY OrderID) b ON a.OrderID = b.OrderID
-    WHERE
-        a.ShippedDate IS NOT NULL
-            AND a.ShippedDate BETWEEN DATE('1996-12-24') AND DATE('1997-09-30')
-    ORDER BY a.ShippedDate;
-    '''
+
     session = DbSession()  # 打开查询窗口
     # 查询语句
     subtotal = func.sum(Order_Details.UnitPrice * Order_Details.Quantity * (1 - Order_Details.Discount)).label('Subtotal')
@@ -146,17 +105,7 @@ def sql2():
 #     pass
 @profile(precision=4, stream=fp)
 def sql4():
-    '''
-    SELECT DISTINCT
-        b.*, a.CategoryName
-    FROM
-        Categories a
-            INNER JOIN
-        Products b ON a.CategoryID = b.CategoryID
-    WHERE
-        b.Discontinued = 'N'
-    ORDER BY b.ProductName;
-    '''
+
     session = DbSession()  # 打开查询窗口
 
     query = (session.query(Products.__table__.c, Categories.CategoryName)
@@ -174,17 +123,9 @@ def sql4():
     return query
 
 
-
+@profile(precision=4, stream=fp)
 def sql5():
-    """
-    SELECT 
-        ProductID, ProductName
-    FROM
-        products
-    WHERE
-        Discontinued = 'N'
-    ORDER BY ProductName;
-    """
+
 
     session = DbSession()  # 打开查询窗口
     query = (session.query(Products.ProductID, Products.ProductName).
@@ -199,24 +140,8 @@ def sql5():
 
 
 # ---------------------------------------------------------------------
-
+@profile(precision=4, stream=fp)
 def sql6():
-    '''
-    SELECT DISTINCT
-        y.OrderID,
-        y.ProductID,
-        x.ProductName,
-        y.UnitPrice,
-        y.Quantity,
-        y.Discount,
-        ROUND(y.UnitPrice * y.Quantity * (1 - y.Discount),
-                2) AS ExtendedPrice
-    FROM
-        Products x
-            INNER JOIN
-        Order_Details y ON x.ProductID = y.ProductID
-    ORDER BY y.OrderID;
-    '''
     session = DbSession()  # 打开查询窗口
     # build the query
     query = (session.query(distinct(Order_Details.OrderID),
@@ -231,6 +156,7 @@ def sql6():
     session.close()
     return query
 
+@profile(precision=4, stream=fp)
 def sql7():
     '''
     SELECT DISTINCT
@@ -271,29 +197,12 @@ def sql7():
     session.close()
     return query
 
+@profile(precision=4, stream=fp)
 def sql8():
-    '''
-    SELECT DISTINCT
-        ProductName AS Ten_Most_Expensive_Products, 
-        UnitPrice
-    FROM
-        Products AS a
-    WHERE
-        10 >= (SELECT 
-                COUNT(DISTINCT UnitPrice)
-            FROM
-                Products AS b
-            WHERE
-                b.UnitPrice >= a.UnitPrice)
-    ORDER BY UnitPrice DESC;
-    '''
-
     session = DbSession()  # 打开查询窗口
 
     Products_aliased = aliased(Products)
-    subquery = session.query(
-            func.count(distinct(Products.UnitPrice))
-        ).filter(Products.UnitPrice >= Products_aliased.UnitPrice).as_scalar()
+    subquery = session.query(func.count(distinct(Products.UnitPrice))).filter(Products.UnitPrice >= Products_aliased.UnitPrice).as_scalar()
     
     query = (
         session.query(
@@ -307,22 +216,8 @@ def sql8():
     session.close()
     return query
 
+@profile(precision=4, stream=fp)
 def sql9():
-    '''
-    SELECT DISTINCT
-        a.CategoryName,
-        b.ProductName,
-        b.QuantityPerUnit,
-        b.UnitsInStock,
-        b.Discontinued
-    FROM
-        Categories a
-            INNER JOIN
-        Products b ON a.CategoryID = b.CategoryID
-    WHERE
-        b.Discontinued = 'N'
-    ORDER BY a.CategoryName , b.ProductName;
-    '''
     session = DbSession()  # 打开查询窗口
 
     query = (session.query(
@@ -330,27 +225,15 @@ def sql9():
             Products.ProductName,
             Products.QuantityPerUnit,
             Products.UnitsInStock,
-            Products.Discontinued).join(Products, Categories.CategoryID==Products.CategoryID).
-                        filter(Products.Discontinued=='N').
+            Products.Discontinued).join(Products, Categories.CategoryID==Products.CategoryID).filter(Products.Discontinued=='N').
                         order_by(Categories.CategoryName, Products.ProductName))
     # for row in query:
     #     print(row)
     session.close()
     return query
 
+@profile(precision=4, stream=fp)
 def sql10():
-    '''
-    SELECT 
-        City, CompanyName, ContactName, 'Customers' AS Relationship
-    FROM
-        Customers 
-    UNION 
-    SELECT 
-        City, CompanyName, ContactName, 'Suppliers'
-    FROM
-        Suppliers
-    ORDER BY City , CompanyName;
-    '''
     session = DbSession()  # 打开查询窗口
 
     table1 = session.query(
@@ -375,21 +258,10 @@ def sql10():
     #     print(row)
     session.close()
     return query
-# ---------------------------------------------------------------------
 
+# ---------------------------------------------------------------------
+@profile(precision=4, stream=fp)
 def sql11():
-    '''
-    SELECT DISTINCT
-        ProductName, UnitPrice
-    FROM
-        Products
-    WHERE
-        UnitPrice > (SELECT 
-                AVG(UnitPrice)
-            FROM
-                Products)
-    ORDER BY UnitPrice;
-    '''
     session = DbSession()  # 打开查询窗口
 
     subquery = session.query(Products).with_entities(func.avg(Products.UnitPrice)).subquery()
@@ -403,6 +275,7 @@ def sql11():
     session.close()
     return query
 
+@profile(precision=4, stream=fp)
 def sql12():
     session = DbSession()  # 打开查询窗口
     # 定义子查询
@@ -459,30 +332,8 @@ def sql12():
     session.close()
     return query
 
+@profile(precision=4, stream=fp)
 def sql13():
-    '''
-    select CategoryName, format(sum(ProductSales), 2) as CategorySales
-    from
-    (
-        select distinct a.CategoryName,
-            b.ProductName,
-            format(sum(c.UnitPrice * c.Quantity * (1 - c.Discount)), 2) as ProductSales,
-            concat('Qtr ', quarter(d.ShippedDate)) as ShippedQuarter
-        from Categories as a
-        inner join Products as b on a.CategoryID = b.CategoryID
-        inner join Order_Details as c on b.ProductID = c.ProductID
-        inner join Orders as d on d.OrderID = c.OrderID
-        where d.ShippedDate between date('1997-01-01') and date('1997-12-31')
-        group by a.CategoryName,
-            b.ProductName,
-            concat('Qtr ', quarter(d.ShippedDate))
-        order by a.CategoryName,
-            b.ProductName,
-            ShippedQuarter
-    ) as x
-    group by CategoryName
-    order by CategoryName;
-    '''
 
     session = DbSession()  # 打开查询窗口
     # 声明表的别名
@@ -527,6 +378,7 @@ def sql13():
     session.close()
     return query
 
+@profile(precision=4, stream=fp)
 def sql15():
     '''
     select distinct b.ShipName,
@@ -606,31 +458,9 @@ def sql15():
     session.close()
     return query
 
+@profile(precision=4, stream=fp)
 def sql16():
-    '''
-    select c.CategoryName as "Product Category",
-           case when s.Country in
-                     ('UK','Spain','Sweden','Germany','Norway',
-                      'Denmark','Netherlands','Finland','Italy','France')
-                then 'Europe'
-                when s.Country in ('USA','Canada','Brazil')
-                then 'America'
-                else 'Asia-Pacific'
-            end as "Supplier Continent",
-            sum(p.UnitsInStock) as UnitsInStock
-    from Suppliers s
-    inner join Products p on p.SupplierID=s.SupplierID
-    inner join Categories c on c.CategoryID=p.CategoryID
-    group by c.CategoryName,
-             case when s.Country in
-                     ('UK','Spain','Sweden','Germany','Norway',
-                      'Denmark','Netherlands','Finland','Italy','France')
-                  then 'Europe'
-                  when s.Country in ('USA','Canada','Brazil')
-                  then 'America'
-                  else 'Asia-Pacific'
-             end;
-    '''
+
     session = DbSession()  # 打开查询窗口
 
     s1 = aliased(Suppliers)
