@@ -380,41 +380,6 @@ def sql13():
 
 @profile(precision=4, stream=fp)
 def sql15():
-    '''
-    select distinct b.ShipName,
-        b.ShipAddress,
-        b.ShipCity,
-        b.ShipRegion,
-        b.ShipPostalCode,
-        b.ShipCountry,
-        b.CustomerID,
-        c.CompanyName,
-        c.Address,
-        c.City,
-        c.Region,
-        c.PostalCode,
-        c.Country,
-        concat(d.FirstName,  ' ', d.LastName) as Salesperson,
-        b.OrderID,
-        b.OrderDate,
-        b.RequiredDate,
-        b.ShippedDate,
-        a.CompanyName,
-        e.ProductID,
-        f.ProductName,
-        e.UnitPrice,
-        e.Quantity,
-        e.Discount,
-        e.UnitPrice * e.Quantity * (1 - e.Discount) as ExtendedPrice,
-        b.Freight
-    from Shippers a
-    inner join Orders b on a.ShipperID = b.ShipVia
-    inner join Customers c on c.CustomerID = b.CustomerID
-    inner join Employees d on d.EmployeeID = b.EmployeeID
-    inner join Order_Details e on b.OrderID = e.OrderID
-    inner join Products f on f.ProductID = e.ProductID
-    order by b.ShipName;
-    '''
 
     session = DbSession()  # 打开查询窗口
     query = session.query(
@@ -502,7 +467,7 @@ if __name__ == "__main__":
     # show_tables()
     # sql1()
     # sql2()
-    sql4()
+    sql15()
     # sql13()
     # sql15()
     # sql16()
