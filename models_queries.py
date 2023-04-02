@@ -71,7 +71,8 @@ def sql1():
     session = DbSession()  # 打开查询窗口
     subtotal = func.format(func.sum(Order_Details.UnitPrice * Order_Details.Quantity * (1 - Order_Details.Discount)), 2).label('Subtotal')
     query = session.query(Order_Details.OrderID, subtotal).group_by(Order_Details.OrderID).order_by(Order_Details.OrderID)
-    
+
+    results = query.all() # 执行查询（如果不调用，是不会真正去查询）
     # for row in query:
     #     print(row)
     session.close()
@@ -95,7 +96,7 @@ def sql2():
                             # .order_by(Orders.ShippedDate)
             )
 
-    # results = query.all()
+    results = query.all()
     # for row in query:
     #     print(row)
     session.close()
@@ -115,7 +116,7 @@ def sql4():
             .distinct(Products.__table__.c)
             )
 
-    # results = query.all()
+    results = query.all()
     # for row in query:
     #     print(row)
 
@@ -131,6 +132,7 @@ def sql5():
     query = (session.query(Products.ProductID, Products.ProductName).
                             filter(Products.Discontinued=='N').
                                 order_by(Products.ProductName))
+    results = query.all()  # 执行查询（如果不调用，是不会真正去查询）
     # for row in query:
     #     print(row)
 
@@ -153,6 +155,8 @@ def sql6():
                     func.round(Order_Details.UnitPrice * Order_Details.Quantity * (1 - Order_Details.Discount), 2).label('ExtendedPrice'))
             .join(Order_Details, Products.ProductID == Order_Details.ProductID)
             .order_by(Order_Details.OrderID))
+
+    results = query.all()  # 执行查询（如果不调用，是不会真正去查询）
     session.close()
     return query
 
@@ -172,7 +176,7 @@ def sql7():
         filter(Orders.OrderDate.between('1997/1/1', '1997/12/31')).
         group_by(Categories.CategoryID, Categories.CategoryName, Products.ProductName).
         order_by(Categories.CategoryName, Products.ProductName, "ProductSales"))
-
+    results = query.all()  # 执行查询（如果不调用，是不会真正去查询）
     # for row in query:
     #     print(row)
     session.close()
@@ -193,7 +197,7 @@ def sql8():
         .filter(10 >= subquery)
         .order_by(desc(Products.UnitPrice))
     )
-
+    results = query.all()  # 执行查询（如果不调用，是不会真正去查询）
     session.close()
     return query
 
@@ -208,6 +212,7 @@ def sql9():
             Products.UnitsInStock,
             Products.Discontinued).join(Products, Categories.CategoryID==Products.CategoryID).filter(Products.Discontinued=='N').
                         order_by(Categories.CategoryName, Products.ProductName))
+    results = query.all()  # 执行查询（如果不调用，是不会真正去查询）
     # for row in query:
     #     print(row)
     session.close()
@@ -234,7 +239,7 @@ def sql10():
     query = table1.union(table2).order_by(
             'City', 'CompanyName'
         )
-    
+    results = query.all()  # 执行查询（如果不调用，是不会真正去查询）
     # for row in query:
     #     print(row)
     session.close()
@@ -250,7 +255,8 @@ def sql11():
         .filter(Products.UnitPrice > subquery) \
         .order_by(Products.UnitPrice) \
         .distinct()
-    
+
+    results = query.all()  # 执行查询（如果不调用，是不会真正去查询）
     # for data in query:
     #     print(data.ProductName, data.UnitPrice)
     session.close()
@@ -307,7 +313,7 @@ def sql12():
             subquery.c.ShippedQuarter
         )
     )
-    # result = query.all()
+    result = query.all()
     # for data in result:
     #     print(data.CategoryName, data.ProductName, data.ProductSales, data.ShippedQuarter)
     session.close()
@@ -353,7 +359,7 @@ def sql13():
     )
 
     # 执行查询
-    # results = query.all()
+    results = query.all()
     # for data in results:
     #     print([col for col in data])
     session.close()
@@ -398,7 +404,7 @@ def sql15():
         join(Order_Details, Orders.OrderID == Order_Details.OrderID). \
         join(Products, Products.ProductID == Order_Details.ProductID). \
         order_by(Orders.ShipName)
-
+    results = query.all()  # 执行查询（如果不调用，是不会真正去查询）
     # for data in query:
     #     print([col for col in data])
     session.close()
@@ -413,7 +419,7 @@ def sql16():
     c1 = aliased(Categories)
 
     # 构建查询语句
-    stmt = (
+    query = (
         session.query(
             c1.CategoryName.label("Product Category"),
             case(
@@ -437,10 +443,11 @@ def sql16():
         )
                   )
     )
+    results = query.all()  # 执行查询（如果不调用，是不会真正去查询）
     # for data in stmt:
     #     print([col for col in data])
     session.close()
-    return stmt
+    return query
 
 
 
