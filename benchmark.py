@@ -10,20 +10,10 @@ import os
 import subprocess
 from subprocess import check_output
 
+
 # convert to mysql
 from sqlalchemy.dialects import mysql
 
-def multi_thread(number):
-    start = datetime.datetime.now()
-    print(f'start:{start}')
-    for _ in range(number):
-        thread = threading.Thread(target=sql12)
-        thread.start()
-        thread.join()
-    print('threads end')
-    end = datetime.datetime.now()
-    print(f'end:{end}')
-    print(f'time cost:{end - start}')
 
 def concurrent_queries(num_queries, func, num_thread):
     start = datetime.datetime.now()
@@ -58,35 +48,58 @@ def timing_function(some_function):
 def sqlalch_insert_benchmark():
     pass
 
-def sqlalch_query_benchmark():
-    # test concurrent
-    func_list = [
-        {'name': '11', 'func':sql11},
-        {'name': '12', 'func':sql12},
-        {'name': '13', 'func':sql13},
-        {'name': '15', 'func':sql15},
-        {'name': '16', 'func':sql16},
-    ]
+def sqlalch_query_benchmark_time(func_list):
     num_queries = 100
     num_thread = 4
     metric_result = []
-    
-    
-    for i, check in enumerate(func_list):
-        print(f'begin func {check["name"]}')
-        time_cost = concurrent_queries(num_queries,check['func'],num_thread)
-        result = {'func':check['name'],'num_queries':num_queries,'num_thread':num_thread,'time_cost':time_cost}
+
+    for i, func_dict in enumerate(func_list):
+        print(f'begin func {func_dict["name"]}')
+        time_cost = concurrent_queries(num_queries, func_dict['func'], num_thread)
+        result = {'func': func_dict['name'], 'num_queries': num_queries, 'num_thread': num_thread, 'time_cost': time_cost}
         metric_result.append(result)
-    
+
     print("All results:")
     pprint(metric_result)
 
-    path = './orm_metric.txt'
-    with open(path,'w',encoding='utf-8') as f:
+    path = './orm_metric_time.txt'
+    with open(path, 'w', encoding='utf-8') as f:
         for line in metric_result:
-            json.dump(line,f)
+            json.dump(line, f)
             f.write('\n')
 
+def sqlalch_query_benchmark_memory(func_list):
+    metric_result = []
+    for i, func_dict in enumerate(func_list):
+        print(f'begin func {func_dict["name"]}')
+        max_memory = get_func_max_memory(func_dict['func'], viz_plot=True)
+        result = {'func': func_dict['name'], 'num_queries': 1, 'num_thread': 1, 'max_memory': max_memory}
+        metric_result.append(result)
+
+    path = './orm_metric_memory.txt'
+    with open(path, 'w', encoding='utf-8') as f:
+        for line in metric_result:
+            json.dump(line, f)
+            f.write('\n')
+
+def sqlalch_query_benchmark():
+    # test concurrent
+    func_list = [
+        {'name': '1', 'func': sql1},
+        {'name': '2', 'func': sql2},
+        {'name': '4', 'func': sql4},
+        {'name': '5', 'func': sql5},
+        {'name': '8', 'func': sql8},
+        {'name': '9', 'func': sql9},
+        {'name': '10', 'func': sql10},
+        {'name': '11', 'func': sql11},
+        {'name': '12', 'func': sql12},
+        {'name': '13', 'func': sql13},
+        {'name': '15', 'func': sql15},
+        {'name': '16', 'func': sql16},
+    ]
+    # sqlalch_query_benchmark_time(func_list)
+    sqlalch_query_benchmark_memory(func_list)
 
 # 对函数执行，采样 Time-based memory usage + 获取max memory usage
 def get_func_max_memory(sql_func, viz_plot=False):
@@ -136,8 +149,5 @@ def sqlalch_gen_sql(sql_func, db_backend=mysql):
     query = sql_func()
     return str(query.statement.compile(dialect=db_backend.dialect()))
 
-
-
 if __name__ == '__main__':
-    # sqlalch_query_benchmark_time()
-    print(get_func_max_memory(sql1))
+    sqlalch_query_benchmark()
