@@ -134,6 +134,7 @@ def sqlalch_query_benchmark():
         {'name': '2', 'func': sql2},
         {'name': '4', 'func': sql4},
         {'name': '5', 'func': sql5},
+        {'name': '6', 'func': sql6},
         {'name': '8', 'func': sql8},
         {'name': '9', 'func': sql9},
         {'name': '10', 'func': sql10},

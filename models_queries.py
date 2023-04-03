@@ -187,6 +187,25 @@ def sql8():
     session = DbSession()  # 打开查询窗口
 
     Products_aliased = aliased(Products)
+    # subquery = session.query(func.count(distinct(Products.UnitPrice))).filter(Products.UnitPrice >= Products_aliased.UnitPrice).as_scalar()
+    
+    query = (
+        session.query(
+            distinct(Products.ProductName.label('Ten_Most_Expensive_Products')),
+            Products.UnitPrice
+        )
+        .order_by(desc(Products.UnitPrice))
+        .limit(10)
+    )
+
+    results = query.all()  # 执行查询（如果不调用，是不会真正去查询）
+    session.close()
+    return query
+
+def sql8_subquery():
+    session = DbSession()  # 打开查询窗口
+
+    Products_aliased = aliased(Products)
     subquery = session.query(func.count(distinct(Products.UnitPrice))).filter(Products.UnitPrice >= Products_aliased.UnitPrice).as_scalar()
     
     query = (
@@ -200,6 +219,7 @@ def sql8():
     results = query.all()  # 执行查询（如果不调用，是不会真正去查询）
     session.close()
     return query
+
 
 @profile(precision=4, stream=fp)
 def sql9():
