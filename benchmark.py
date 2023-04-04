@@ -1,14 +1,13 @@
 
-from models_queries import *
+from sqlalchemy_queries import *
+from django_queries import *
 import json
 from pprint import pprint
-from memory_profiler import profile
 import time
 import datetime
 from concurrent.futures import ThreadPoolExecutor
 import os
 import subprocess
-from subprocess import check_output
 
 
 # convert to mysql
@@ -93,15 +92,14 @@ def sqlalch_gen_sql(sql_func, db_backend=mysql):
 def sqlalch_insert_benchmark():
     pass
 
-def sqlalch_query_benchmark_time(func_list):
-    num_queries = 100
-    num_thread = 4
+def sqlalch_query_benchmark_time(func_list,num_queries,num_thread):
+
     metric_result = []
 
-    for i, func_dict in enumerate(func_list):
-        print(f'begin func {func_dict["name"]}')
-        time_cost = concurrent_queries(num_queries, func_dict['func'], num_thread)
-        result = {'func': func_dict['name'], 'num_queries': num_queries, 'num_thread': num_thread, 'time_cost': time_cost}
+    for i, func in enumerate(func_list):
+        print(f'begin func {func.__name__}')
+        time_cost = concurrent_queries(num_queries, func, num_thread)
+        result = {'func': func.__name__, 'num_queries': num_queries, 'num_thread': num_thread, 'time_cost': time_cost}
         metric_result.append(result)
 
     print("All results:")
@@ -113,12 +111,12 @@ def sqlalch_query_benchmark_time(func_list):
             json.dump(line, f)
             f.write('\n')
 
-def sqlalch_query_benchmark_memory(func_list):
+def sqlalch_query_benchmark_memory(func_list, viz_plot):
     metric_result = []
-    for i, func_dict in enumerate(func_list):
-        print(f'begin func {func_dict["name"]}')
-        max_memory = get_func_max_memory(func_dict['func'], viz_plot=True)
-        result = {'func': func_dict['name'], 'num_queries': 1, 'num_thread': 1, 'max_memory': max_memory}
+    for i, func in enumerate(func_list):
+        print(f'begin func {func.__name__}')
+        max_memory = get_func_max_memory(func, viz_plot=viz_plot)
+        result = {'func': func.__name__, 'num_queries': 1, 'num_thread': 1, 'max_memory': max_memory}
         metric_result.append(result)
 
     path = './orm_metric_memory.txt'
@@ -130,22 +128,38 @@ def sqlalch_query_benchmark_memory(func_list):
 def sqlalch_query_benchmark():
     # test concurrent
     func_list = [
-        {'name': '1', 'func': sql1},
-        {'name': '2', 'func': sql2},
-        {'name': '4', 'func': sql4},
-        {'name': '5', 'func': sql5},
-        {'name': '6', 'func': sql6},
-        {'name': '8', 'func': sql8},
-        {'name': '9', 'func': sql9},
-        {'name': '10', 'func': sql10},
-        {'name': '11', 'func': sql11},
-        {'name': '12', 'func': sql12},
-        {'name': '13', 'func': sql13},
-        {'name': '15', 'func': sql15},
-        {'name': '16', 'func': sql16},
+        # sqlalchmey
+        sql1,
+        sql2,
+        sql4,
+        sql5,
+        sql6,
+        sql8,
+        # sql8_subquery,
+        sql9,
+        sql10,
+        sql11,
+        # sql12,
+        # sql13,
+        # sql15,
+        # sql16,
+
+        # django
+        sql_function_1,
+        sql_function_2,
+        sql_function_4,
+        sql_function_5,
+        sql_function_6,
+        sql_function_8,
+        sql_function_9,
+        sql_function_10,
+        sql_function_11,
     ]
-    # sqlalch_query_benchmark_time(func_list)
-    sqlalch_query_benchmark_memory(func_list)
+
+    num_queries = 1
+    num_thread = 1
+    sqlalch_query_benchmark_time(func_list,num_queries,num_thread)
+    sqlalch_query_benchmark_memory(func_list, viz_plot=False)
 
 
 def sqlalch_sql_generation():
@@ -174,5 +188,5 @@ def sqlalch_sql_generation():
         
 
 if __name__ == '__main__':
-    # sqlalch_query_benchmark()
-    sqlalch_sql_generation()
+    sqlalch_query_benchmark()
+    # sqlalch_sql_generation()
